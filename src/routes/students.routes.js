@@ -1,6 +1,7 @@
 import { Router } from "express";
+import authenticateJWT from "../middleware/auth.js";
 import {
-  createStudent,
+  uploadAdmissionInfo,
   getAllStudents,
   getStudentById,
 } from "../controllers/students.controller.js";
@@ -8,13 +9,12 @@ import {
 const router = Router();
 
 // admission data creation
-router.post("/", createStudent);
+router.post("/", authenticateJWT, uploadAdmissionInfo);
 
 // list all students
-router.get("/", getAllStudents);
+router.get("/", authenticateJWT, getAllStudents);
 
 // get one student by id
-router.get("/me", getStudentById);
-router.put("/me", getStudentById);
-
+// router.get("/me", authenticateJWT, getStudentById);
+router.put("/me", authenticateJWT, uploadAdmissionInfo);
 export default router;

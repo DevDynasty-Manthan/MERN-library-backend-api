@@ -9,23 +9,19 @@ const studentSchema = new Schema(
       ref: "User",          // link to User
       required: false,      // you can make it true later when flow is fixed
     },
-    fullName: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-    email: {
-      type: String,
-      required: true,
-      lowercase: true,
-      trim: true,
-    },
     department: {
       type: String,
       required: true,
       trim: true,
     },
-    year: {
+    purpose :[
+      {
+        type: String,
+        required: true,
+
+      }
+    ],
+    age: {
       type: Number,
       required: true,
     },

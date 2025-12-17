@@ -1,15 +1,17 @@
 import bcrypt from "bcrypt";
 import User from "../models/User.js";
 import Student from "../models/Student.js";
-
+import jwt from "jsonwebtoken";
+// import app from './src/app.js'
+import cookieparser from "cookie-parser";
 export const registerUser = async (req, res) => {
   try {
-    const { name, email, password, enrollmentNo } = req.body;
+    const { name,phone, email, password} = req.body;
 
-    if (!email || !password) {
+    if (!email || !password || !phone) {
       return res
         .status(400)
-        .json({ ok: false, message: "Email and password are required" });
+        .json({ ok: false, message: "Email, phone and password are required" });
     }
 
     const existingUser = await User.findOne({ email });
@@ -23,25 +25,18 @@ export const registerUser = async (req, res) => {
 
     const user = await User.create({
       name,
+      phone,
       email,
       password: hashedPassword,
       role: "student",
     });
-
-    // optional: auto-link to existing admission record by email or enrollmentNo
-    if (enrollmentNo) {
-      const admissionStudent = await Student.findOne({ enrollmentNo });
-      if (admissionStudent) {
-        admissionStudent.userId = user._id;
-        await admissionStudent.save();
-      }
-    }
-
+    
     return res.status(201).json({
       ok: true,
       message: "User registration successful",
       data: {
         id: user._id,
+        phone: user.phone,
         name: user.name,
         email: user.email,
         role: user.role,
@@ -72,7 +67,10 @@ export const loginUser = async (req, res) => {
         .status(401)
         .json({ ok: false, message: "Invalid credentials" });
     }
-
+    const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, {
+      expiresIn: process.env.JWT_EXPIRES_IN,
+    });
+    console.log("Generated JWT Token:", token);
     // for now, no JWT — just send basic user info
     return res.json({
       ok: true,
@@ -82,6 +80,7 @@ export const loginUser = async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
+        token: token,
       },
     });
   } catch (error) {
