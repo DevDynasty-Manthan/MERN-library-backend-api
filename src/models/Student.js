@@ -6,26 +6,36 @@ const studentSchema = new Schema(
   {
     userId: {
       type: Schema.Types.ObjectId,
-      ref: "User",          // link to User
-      required: false,      // you can make it true later when flow is fixed
+      ref: "User",
+      required: false,
     },
     department: {
       type: String,
       required: true,
       trim: true,
     },
-    purpose :[
+    purpose: [
       {
         type: String,
         required: true,
-
-      }
+      },
     ],
     age: {
       type: Number,
       required: true,
     },
-    // add more admission fields as needed
+    plan: {
+      type: Schema.Types.ObjectId,
+      ref: "Plan",
+      required: false,
+      description: "Reference to selected plan (Normal or Premium)",
+    },
+    planCode: {
+      type: String,
+      enum: ["Normal", "Premium"],
+      required: false,
+      description: "Plan code for quick reference",
+    },
   },
   { timestamps: true }
 );
