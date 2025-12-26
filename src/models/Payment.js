@@ -1,18 +1,19 @@
 import mongoose from 'mongoose'
-
+const {Schema} = mongoose;
 const paymentSchema= new mongoose.Schema({
     amount : {
         type : Number,
         required: true
     },
-    screenshotUrl:{
-        required :  true,
-        type: String
-    },
     transactionId : {
         type : String,
         required : true
     },
+    planId: { 
+    type: Schema.Types.ObjectId, 
+    ref: "Plan", 
+    required: true 
+  },
     method : {
         type : String,
         enum : ["cash","upi","online"],

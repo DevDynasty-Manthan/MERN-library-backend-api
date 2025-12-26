@@ -9,7 +9,7 @@ const studentSchema = new Schema(
       ref: "User",
       required: false,
     },
-    department: {
+    education: {
       type: String,
       required: true,
       trim: true,
@@ -30,12 +30,16 @@ const studentSchema = new Schema(
       required: false,
       description: "Reference to selected plan (Normal or Premium)",
     },
-    planCode: {
-      type: String,
-      enum: ["Normal", "Premium"],
-      required: false,
-      description: "Plan code for quick reference",
+    SeatNo:{
+      type: Number,
+      required:false
     },
+    membershipStatus : {
+      type: String,
+      enum: ["active", "inactive", "expired"],
+      default: "active",
+      description: "Status of the student's membership",
+    }
   },
   { timestamps: true }
 );

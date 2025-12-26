@@ -15,22 +15,6 @@ export const uploadAdmissionInfo = async (req, res) => {
     let updateData = { ...admissionData, userId };
 
     // If a plan is selected, fetch plan data and save reference
-    if (admissionData.planCode) {
-      const plan = await Plan.findOne({ code: admissionData.planCode });
-
-      if (!plan) {
-        return res
-          .status(404)
-          .json({ ok: false, message: `Plan '${admissionData.planCode}' not found` });
-      }
-
-      // Save only plan ID and code as reference
-      updateData = {
-        ...updateData,
-        plan: plan._id,
-        planCode: plan.code,
-      };
-    }
 
     const studentProfile = await Student.findOneAndUpdate(
       { userId },
@@ -48,6 +32,63 @@ export const uploadAdmissionInfo = async (req, res) => {
     return res
       .status(500)
       .json({ ok: false, message: "Internal server error" });
+  }
+};
+
+
+export const updateMyPlan = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { planCode } = req.body;
+
+    if (!planCode) {
+      return res.status(400).json({
+        ok: false,
+        message: "planCode is required",
+      });
+    }
+
+    const plan = await Plan.findOne({ code: planCode });
+    if (!plan) {
+      return res.status(404).json({
+        ok: false,
+        message: `Plan '${planCode}' not found`,
+      });
+    }
+
+    // Update student with plan
+    const updatedStudent = await Student.findOneAndUpdate(
+      { userId },
+      { $set: { plan: plan._id, planCode: plan.code } },
+      { new: true, runValidators: true }
+    ).populate("plan");
+
+    // Get available seats for this plan
+    const seatAssignment = await require("../models/seatAssignment.js").default.find({
+      planId: plan._id,
+      status: "assigned",
+    });
+    const occupiedSeats = seatAssignment.length;
+    const availableSeats = plan.capacity - occupiedSeats;
+
+    return res.status(200).json({
+      ok: true,
+      message: "Plan updated successfully",
+      data: {
+        student: updatedStudent,
+        seatInfo: {
+          totalCapacity: plan.capacity,
+          occupiedSeats: occupiedSeats,
+          availableSeats: availableSeats,
+        },
+      },
+    });
+  } catch (err) {
+    console.error("Error updating plan:", err);
+    return res.status(500).json({
+      ok: false,
+      message: err?.message || "Internal server error",
+    });
   }
 };
 

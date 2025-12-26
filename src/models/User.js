@@ -28,6 +28,7 @@ const userSchema = new mongoose.Schema(
       enum: ["student", "admin"],
       default: "student",
     },
+    sessionId : String 
   },
   { timestamps: true }
 );

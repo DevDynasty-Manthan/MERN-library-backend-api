@@ -60,22 +60,27 @@ export const loginUser = async (req, res) => {
         .status(401)
         .json({ ok: false, message: "Invalid credentials" });
     }
-
+       console.log("user in login body 1", user.email);
     const isMatch = await bcrypt.compare(password, user.password); // [web:385]
     if (!isMatch) {
       return res
         .status(401)
         .json({ ok: false, message: "Invalid credentials" });
     }
-    const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, {
-      expiresIn: process.env.JWT_EXPIRES_IN,
-    });
+ 
+    const token = jwt.sign(
+  { id: user._id, role: user.role, sessionId: user.sessionId, email: user.email },
+  process.env.JWT_SECRET,
+  { expiresIn: process.env.JWT_EXPIRES_IN }
+);
+       console.log("user in login body 2", user.email);
+   
     console.log("Generated JWT Token:", token);
     // for now, no JWT — just send basic user info
     return res.json({
       ok: true,
       message: "User login successful",
-      data: {
+      data : {
         id: user._id,
         name: user.name,
         email: user.email,
