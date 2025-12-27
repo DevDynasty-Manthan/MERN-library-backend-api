@@ -28,7 +28,15 @@ const userSchema = new mongoose.Schema(
       enum: ["student", "admin"],
       default: "student",
     },
-    sessionId : String 
+    sessionId : String ,
+    currentOtp : {
+      type : String,
+    },
+    otpExpiry : Date,
+    otpAttempt : {
+      type : Number,
+      default : 0
+    }
   },
   { timestamps: true }
 );

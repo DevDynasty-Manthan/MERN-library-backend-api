@@ -7,7 +7,9 @@ import Plan from "../models/plan.js";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import jwt from "jsonwebtoken";
+import sendEmail from "../utils/emailSend.js";
 import razorpayInstance from "../config/razorpay.config.js";
+import { use } from "react";
 
 // Step 1: User Registration
 export const step1_userRegistration = async (req, res) => {
@@ -432,3 +434,84 @@ export const getSessionStatus = async (req, res) => {
       .json({ ok: false, msg: err?.message || "Internal server error" });
   }
 };
+
+export const step5_creatOtpForCashPayment = async (req, res) => {
+  try {
+    const sessionId = req.user.sessionId;
+
+    const session = await RegistrationSession.findById(sessionId);
+    if (!session) return res.status(404).json({ ok: false, msg: "No active session found" });
+
+    const user = await User.findById(session.userId);
+    if (!user) return res.status(404).json({ ok: false, msg: "User not found" });
+
+    const OTP = String(crypto.randomInt(100000, 1000000)); // 6 digits [web:1308]
+    const hashedOtp = await bcrypt.hash(OTP, 10);
+
+    user.currentOtp = hashedOtp;
+    user.otpExpiry = Date.now() + 3 * 60 * 1000; // 3 minutes
+    user.otpAttempt = (user.otpAttempt ?? 0) + 1;
+    await user.save();
+
+    await sendEmail({
+      to: "gajbhiyemanthan7@gmail.com", // send to the actual user
+      subject: "OTP for cash verification",
+      html: `<p>OTP is: <b>${OTP}</b></p>`,
+    });
+
+    return res.json({
+      ok: true,
+      data: { attemptOfOtp: user.otpAttempt, otpExpiry: user.otpExpiry },
+    });
+  } catch (error) {
+    return res.status(500).json({ ok: false, msg: error?.message || "Internal server error" });
+  }
+};
+
+
+export const step5_verifyOtp = async (req, res) => {
+  try {
+    const { OTP } = req.body;
+    const sessionId = req.user.sessionId;
+
+    const session = await RegistrationSession.findById(sessionId);
+    if (!session) return res.status(404).json({ ok: false, msg: "Session not found" });
+
+    const user = await User.findById(session.userId);
+    if (!user) return res.status(404).json({ ok: false, msg: "User not found" });
+
+    if (!user.currentOtp || !user.otpExpiry) {
+      return res.status(400).json({ ok: false, msg: "OTP not generated" });
+    }
+
+    if (Date.now() > user.otpExpiry) {
+      return res.status(400).json({ ok: false, msg: "OTP expired" });
+    }
+
+    const isMatch = await bcrypt.compare(OTP, user.currentOtp); // plain vs hash [web:1162]
+    if (!isMatch) {
+      return res.status(400).json({ ok: false, msg: "Wrong OTP" });
+    }
+
+    // success: clear OTP
+    user.currentOtp = null;
+    user.otpExpiry = null;
+    await user.save();
+
+    // mark cash payment verified in session
+    session.step5 = session.step5 || {};
+    session.step5.completed = true;
+    session.step5.status = "verified";
+    session.isCompleted = true;
+    await session.save();
+
+    return res.json({ ok: true, msg: "OTP verified. Cash payment confirmed.",
+      data : {
+        studentId : session.studentId
+      }
+     });
+  } catch (error) {
+    return res.status(500).json({ ok: false, msg: error?.message || "Internal server error" });
+  }
+};
+

@@ -7,6 +7,8 @@ import {
   step5_createPaymentOrder,
   step5_verifyPayment,
   getSessionStatus,
+  step5_creatOtpForCashPayment,
+  step5_verifyOtp
 } from "../controllers/onboarding.controller.js";
 import authenticateJWT from "../middleware/auth.js";
 
@@ -21,6 +23,8 @@ router.post("/step3/plan", authenticateJWT, step3_selectPlan);
 router.post("/step4/seat", authenticateJWT, step4_selectSeat);
 router.post("/step5/create-order", authenticateJWT, step5_createPaymentOrder);
 router.post("/step5/verify-payment", authenticateJWT, step5_verifyPayment);
+router.get('/step5/create-otp', authenticateJWT, step5_creatOtpForCashPayment)
+router.post('/step5/verify-otp',authenticateJWT,step5_verifyOtp)
 router.get("/status", authenticateJWT, getSessionStatus);
 
 export default router;
